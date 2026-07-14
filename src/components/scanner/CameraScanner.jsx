@@ -1,61 +1,72 @@
-import { useState } from "react";
-import { useZxing } from "react-zxing";
+import { useEffect, useRef } from "react";
+import { BrowserMultiFormatReader } from "@zxing/library";
 
-function CameraScanner({ onScan }) {
-  const [cameraOn, setCameraOn] = useState(false);
+function CameraScanner({ onScan, onClose }) {
+  const videoRef = useRef(null);
 
-  const { ref } = useZxing({
-    paused: !cameraOn,
+  useEffect(() => {
 
-    onDecodeResult(result) {
-      const barcode = result.getText();
+    const codeReader = new BrowserMultiFormatReader();
 
-      console.log("✅ Barcode Detected:", barcode);
+    codeReader.decodeFromVideoDevice(
+      undefined,
+      videoRef.current,
+      (result, error) => {
 
-      setCameraOn(false);
-      onScan(barcode);
-    },
-  });
+        if (result) {
+
+          const barcode = result.getText();
+
+          console.log("Detected:", barcode);
+
+          onScan(barcode);
+
+          codeReader.reset();
+        }
+
+      }
+    );
+
+    return () => {
+      codeReader.reset();
+    };
+
+  }, [onScan]);
 
   return (
+
     <div className="text-center">
-      {!cameraOn ? (
+
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{
+          width: "100%",
+          maxWidth: "600px",
+          border: "2px solid #0d6efd",
+          borderRadius: "10px",
+        }}
+      />
+
+      <div className="mt-3">
+
         <button
-          className="btn btn-primary"
-          onClick={() => setCameraOn(true)}
+          className="btn btn-danger"
+          onClick={onClose}
         >
-          📷 Open Camera
+          ❌ Close Camera
         </button>
-      ) : (
-        <>
-          <video
-            ref={ref}
-            autoPlay
-            playsInline
-            muted
-            style={{
-              width: "100%",
-              maxWidth: "600px",
-              border: "2px solid #0d6efd",
-              borderRadius: "10px",
-            }}
-          />
 
-          <div className="mt-3">
-            <button
-              className="btn btn-danger"
-              onClick={() => setCameraOn(false)}
-            >
-              Close Camera
-            </button>
-          </div>
+      </div>
 
-          <p className="mt-3 text-muted">
-            Point your camera at a barcode...
-          </p>
-        </>
-      )}
+      <p className="mt-3">
+        Point your barcode at the camera...
+      </p>
+
     </div>
+
   );
 }
 
