@@ -1,12 +1,17 @@
 import { useState } from "react";
 import CameraScanner from "../../components/scanner/CameraScanner";
 import { getProductByBarcode } from "../../services/Api";
-
+import ProductCard from "../../components/scanner/ProductCard";
+import "../../styles/Scanner.css";
 function ScanProduct() {
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [error, setError] = useState("");
 
   const handleScan = async (barcode) => {
+    setLoading(true);
+    setError("");
     try {
       console.log("Scanned:", barcode);
 
@@ -15,29 +20,40 @@ function ScanProduct() {
       console.log(data);
 
       setProduct(data.product);
-
+      setLoading(false);
       setShowCamera(false);
 
     } catch (error) {
       console.error(error);
-      alert("Product not found!");
+
+      setLoading(false);
+      setProduct(null);
+
+      setError("Product not found!");
+
       setShowCamera(false);
     }
   };
 
   return (
-    <div className="container mt-5">
+    <div className="scanner-container">
 
-      <h1 className="text-center mb-4">
-        OpenFood Barcode Scanner
-      </h1>
+      <div className="page-header">
+
+        <h1>📦 OpenFood Inventory Scanner</h1>
+
+        <p>
+          Scan a product barcode to instantly retrieve product information.
+        </p>
+
+      </div>
 
 
       {!showCamera && (
         <div className="text-center">
 
           <button
-            className="btn btn-primary btn-lg"
+            className="btn btn-primary action-btn"
             onClick={() => setShowCamera(true)}
           >
             📷 Open Camera
@@ -49,69 +65,81 @@ function ScanProduct() {
       {/* Camera */}
 
       {showCamera && (
-        <CameraScanner
-          onScan={handleScan}
-          onClose={() => setShowCamera(false)}
-        />
+        <div className="camera-card">
+
+          <CameraScanner
+            onScan={handleScan}
+            onClose={() => setShowCamera(false)}
+          />
+
+        </div>
       )}
+      {loading && (
+        <div className="text-center mt-5">
 
+          <div
+            className="spinner-border text-primary"
+            style={{ width: "4rem", height: "4rem" }}
+          ></div>
 
-      {product && (
+          <h4 className="mt-3">
+            Fetching Product...
+          </h4>
 
-        <div className="card mt-5 shadow p-4">
+          <p className="text-muted">
+            Please wait...
+          </p>
 
-          <div className="row">
+        </div>
+      )}
+      {error && (
+        <div className="card mt-5 shadow border-danger">
 
-            <div className="col-md-4 text-center">
+          <div className="card-body text-center">
 
-              <img
-                src={product.image_front_url}
-                alt={product.product_name}
-                className="img-fluid"
-              />
+            <h2 className="text-danger">
+              ❌ Product Not Found
+            </h2>
 
-            </div>
+            <p className="text-muted">
+              We couldn't find this barcode in the OpenFoodFacts database.
+            </p>
 
-            <div className="col-md-8">
-
-              <h2>{product.product_name}</h2>
-
-              <hr />
-
-              <p>
-                <strong>Barcode:</strong> {product.code}
-              </p>
-
-              <p>
-                <strong>Brand:</strong> {product.brands}
-              </p>
-
-              <p>
-                <strong>Quantity:</strong> {product.quantity}
-              </p>
-              <p>
-                <strong>Nutri Score:</strong>{" "}
-                {product.nutriscore_grade}
-              </p>
-
-              <button
-                className="btn btn-success mt-3"
-                onClick={() => {
-                  setProduct(null);
-                  setShowCamera(true);
-                }}
-              >
-                🔄 Scan Another Product
-              </button>
-
-            </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setError("");
+                setShowCamera(true);
+              }}
+            >
+              📷 Scan Again
+            </button>
 
           </div>
 
         </div>
-
       )}
+      {product && (
+        <div className="product-card">
 
+          <ProductCard product={product} />
+
+          <div className="text-center mt-4">
+
+            <button
+              className="btn btn-success action-btn"
+              onClick={() => {
+                setProduct(null);
+                setShowCamera(true);
+              }}
+            >
+              🔄 Scan Another Product
+            </button>
+
+          </div>
+
+        </div>
+      )}
     </div>
   );
 }
